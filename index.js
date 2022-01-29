@@ -48,6 +48,13 @@ const query1 = gql`
 const query2 = gql`
   query Query2($login: String!, $query: String!, $searchAfter: String) {
 
+    rateLimit {
+      limit
+      cost
+      remaining
+      resetAt
+    }
+
     user(login: $login) {
       login
       name
@@ -103,6 +110,7 @@ const runQuery2 = async (client, login) => {
   }
   for (; ;) {
     const data = await client.request(query2, variables)
+    console.dir(data.rateLimit)
     if (!variables.searchAfter) {
       console.dir(data.user)
     }

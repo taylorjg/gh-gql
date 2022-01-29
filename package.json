@@ -1,14 +1,10 @@
 {
   "name": "gh-gql",
   "version": "1.0.0",
-  "description": "",
+  "description": "Playing around with GitHub GraphQL API via graphql-request",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Jonathan Taylor",
+  "license": "MIT",
   "dependencies": {
     "dotenv": "^14.3.2",
     "graphql": "^16.3.0",
