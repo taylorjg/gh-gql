@@ -24,11 +24,12 @@ const query = gql`
           node {
             id
             name
+            description
             isFork
             owner {
               login
             }
-            languages(first: 100) {
+            languages(first: 100, orderBy: { direction: DESC, field: SIZE }) {
               edges {
                 size
               }
@@ -64,12 +65,12 @@ const main = async () => {
       const reposAfter = data.user.repositories.pageInfo.endCursor
       const repoCount = data.user.repositories.edges.length
       console.log({ moreReposToFetch, reposAfter, repoCount })
+      console.dir(data.user.repositories.edges[0], { depth: null })
       if (moreReposToFetch) {
         variables.reposAfter = reposAfter
       } else {
         break
       }
-      // console.dir(data, { depth: null })
     }
   } catch (error) {
     console.log("[main]", "ERROR:", error.message)
