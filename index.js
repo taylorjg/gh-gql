@@ -9,7 +9,6 @@ const query1 = gql`
     user(login: $login) {
       login
       name
-      email
       location
       company
       url
@@ -58,7 +57,6 @@ const query2 = gql`
     user(login: $login) {
       login
       name
-      email
       location
       company
       url
