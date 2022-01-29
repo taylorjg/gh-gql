@@ -4,8 +4,8 @@ const { GraphQLClient, gql } = require("graphql-request")
 
 const { GH_URL, GH_TOKEN } = process.env
 
-const query = gql`
-  query GetUser($login: String!, $reposAfter: String) {
+const query1 = gql`
+  query Query1($login: String!, $reposAfter: String) {
     user(login: $login) {
       login
       name
@@ -45,33 +45,97 @@ const query = gql`
   }
 `
 
-// http://graphql.org/learn/pagination/
-// https://stackoverflow.com/questions/48116781/github-api-v4-how-can-i-traverse-with-pagination-graphql
+const query2 = gql`
+  query Query2($login: String!, $query: String!, $searchAfter: String) {
+
+    user(login: $login) {
+      login
+      name
+      email
+      location
+      company
+      url
+      avatarUrl
+      websiteUrl
+    }
+
+    search(first: 100, type: REPOSITORY, query: $query, after: $searchAfter) {
+      codeCount
+      issueCount
+      repositoryCount
+      userCount
+      nodes {
+        ... on Repository {
+          name
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+`
+
+const runQuery1 = async (client, login) => {
+  const variables = {
+    login
+  }
+  for (; ;) {
+    const data = await client.request(query1, variables)
+    const moreReposToFetch = data.user.repositories.pageInfo.hasNextPage
+    const reposAfter = data.user.repositories.pageInfo.endCursor
+    const repoCount = data.user.repositories.edges.length
+    console.log({ moreReposToFetch, reposAfter, repoCount })
+    console.dir(data.user.repositories.edges[0], { depth: null })
+    if (moreReposToFetch) {
+      variables.reposAfter = reposAfter
+    } else {
+      break
+    }
+  }
+}
+
+const runQuery2 = async (client, login) => {
+  const variables = {
+    login,
+    query: `user:${login} fork:false`
+  }
+  for (; ;) {
+    const data = await client.request(query2, variables)
+    if (!variables.searchAfter) {
+      console.dir(data.user)
+    }
+    const moreReposToFetch = data.search.pageInfo.hasNextPage
+    const searchAfter = data.search.pageInfo.endCursor
+    const nodeCount = data.search.nodes.length
+    console.log({
+      codeCount: data.search.codeCount,
+      issueCount: data.search.issueCount,
+      repositoryCount: data.search.repositoryCount,
+      userCount: data.search.userCount
+    })
+    console.log({ moreReposToFetch, searchAfter, nodeCount })
+    console.dir(data.search.nodes[0], { depth: null })
+    if (moreReposToFetch) {
+      variables.searchAfter = searchAfter
+    } else {
+      break
+    }
+  }
+}
 
 const main = async () => {
   try {
+    const login = process.argv.length === 3 ? process.argv[2] : "taylorjg"
     const options = {
       headers: {
         authorization: `bearer ${GH_TOKEN}`
       }
     }
     const client = new GraphQLClient(GH_URL, options)
-    const variables = {
-      login: process.argv.length === 3 ? process.argv[2] : "taylorjg"
-    }
-    for (; ;) {
-      const data = await client.request(query, variables)
-      const moreReposToFetch = data.user.repositories.pageInfo.hasNextPage
-      const reposAfter = data.user.repositories.pageInfo.endCursor
-      const repoCount = data.user.repositories.edges.length
-      console.log({ moreReposToFetch, reposAfter, repoCount })
-      console.dir(data.user.repositories.edges[0], { depth: null })
-      if (moreReposToFetch) {
-        variables.reposAfter = reposAfter
-      } else {
-        break
-      }
-    }
+    await runQuery1(client, login)
+    await runQuery2(client, login)
   } catch (error) {
     console.log("[main]", "ERROR:", error.message)
   }
